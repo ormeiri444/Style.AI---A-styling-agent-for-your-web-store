@@ -1,0 +1,52 @@
+[
+  {
+    "id": "9471652626707",
+    "source": "raven",
+    "name": "\u05d8\u05d5\u05e4 LIRUX \u05db\u05ea\u05e4\u05d9\u05d4 \u05d3\u05e7\u05d4 \u05db\u05d9\u05d5\u05d5\u05e5 + \u05d8\u05d9\u05d9\u05e5 LIRUX \u05d0\u05e8\u05d5\u05da \u05d2\u05d1\u05d5\u05d4 - COFFEE",
+    "price": 389.8,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0565/3662/9429/files/Generative_Fill_38_a4dbe988-e29f-43de-ba34-001dcb05a5d4.png?v=1768211050",
+    "product_url": "https://raven.co.il/products/lirux-top-thin-strap-round-neckline-lirux-high-waist-long-leggings-set-coffee"
+  },
+  {
+    "id": "9471758729491",
+    "source": "raven",
+    "name": "\u05d8\u05d5\u05e4 LIRUX \u05e7\u05d8\u05df + \u05d8\u05d9\u05d9\u05e5 LIRUX \u05d0\u05e8\u05d5\u05da \u05d2\u05d1\u05d5\u05d4 - COFFEE",
+    "price": 399.8,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0565/3662/9429/files/Generative_Fill_10_1024544b-fe57-4471-b888-943bdfcdadf9.png?v=1768211934",
+    "product_url": "https://raven.co.il/products/lirux-mini-top-lirux-high-waist-long-leggings-set-coffee"
+  },
+  {
+    "id": "9471812469011",
+    "source": "raven",
+    "name": "\u05d8\u05d5\u05e4 LIRUX \u05e7\u05d8\u05df + \u05d8\u05d9\u05d9\u05e5 LIRUX \u05e7\u05e6\u05e8 - COFFEE",
+    "price": 299.8,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0565/3662/9429/files/Generative_Fill_53_4f9083b3-fc52-43b2-a414-b0251203ffbd.png?v=1768211982",
+    "product_url": "https://raven.co.il/products/lirux-mini-top-lirux-biker-shorts-set-coffee"
+  },
+  {
+    "id": "9688191074579",
+    "source": "raven",
+    "name": "\u05d2\u05d5\u05e4\u05d9\u05ea LIRUX \u05d2\u05d1 \u05de\u05d5\u05e6\u05dc\u05d1 + \u05d8\u05d9\u05d9\u05e5 LIRUX \u05d0\u05e8\u05d5\u05da \u05d2\u05d1\u05d5\u05d4 - COFFEE",
+    "price": 439.8,
+    "currency": "ILS",
+    "category": "lower_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0565/3662/9429/files/Raven11.0910352_websize_ea64c241-8828-4f58-b76a-cf8886ae269c.png?v=1727354434",
+    "product_url": "https://raven.co.il/products/v-scoop-neckline-thin-straps-tank-top-lirux-high-waist-long-leggings-set-coffee"
+  },
+  {
+    "id": "9688201593107",
+    "source": "raven",
+    "name": "\u05d2\u05d5\u05e4\u05d9\u05ea LIRUX \u05d2\u05d1 \u05de\u05d5\u05e6\u05dc\u05d1 + \u05d8\u05d9\u05d9\u05e5 LIRUX \u05e7\u05e6\u05e8 - COFFEE",
+    "price": 339.8,
+    "currency": "ILS",
+    "category": "lower_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0565/3662/9429/files/Generative_Fill_62_0c28ea6d-b5e2-4203-b1b7-99d6111ca476.png?v=1768144365",
+    "product_url": "https://raven.co.il/products/v-scoop-neckline-thin-straps-tank-top-lirux-biker-shorts-set-coffee"
+  }
+]

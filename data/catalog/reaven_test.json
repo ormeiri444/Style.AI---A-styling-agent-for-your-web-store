@@ -1,0 +1,52 @@
+[
+  {
+    "id": "15186450972998",
+    "source": "reaven",
+    "name": "Reaven Emerald Green Thermal Zip Hoodie",
+    "price": 139.0,
+    "currency": "EUR",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0595/2107/3357/files/GreenHoodieFrontPNG_0cecc71d-a3b4-45f6-8fa6-c5a2c8c9dd67.png?v=1759258423",
+    "product_url": "https://www.reaven.co/products/reaven-emerald-green-thermal-zip-hoodie"
+  },
+  {
+    "id": "14816584433990",
+    "source": "reaven",
+    "name": "Reaven Singapore Reavenism Flannel",
+    "price": 95.0,
+    "currency": "EUR",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0595/2107/3357/files/PNGBlackFlannelfrontFIXresize.png?v=1733882605",
+    "product_url": "https://www.reaven.co/products/reaven-singapore-reavenism-flannel"
+  },
+  {
+    "id": "14861968081222",
+    "source": "reaven",
+    "name": "Reaven Black Signature Hoodie",
+    "price": 109.0,
+    "currency": "EUR",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0595/2107/3357/files/PNGSignatureHoodieBlack1resize.png?v=1736719850",
+    "product_url": "https://www.reaven.co/products/reaven-black-signature-hoodie"
+  },
+  {
+    "id": "14861972930886",
+    "source": "reaven",
+    "name": "Reaven Navy Signature Hoodie",
+    "price": 109.0,
+    "currency": "EUR",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0595/2107/3357/files/PNGSignatureHoodieNavy1resizeFIX.png?v=1736720268",
+    "product_url": "https://www.reaven.co/products/reaven-navy-signature-hoodie"
+  },
+  {
+    "id": "14861974077766",
+    "source": "reaven",
+    "name": "Reaven Olive Signature Hoodie",
+    "price": 109.0,
+    "currency": "EUR",
+    "category": "upper_body",
+    "image_url": "https://cdn.shopify.com/s/files/1/0595/2107/3357/files/PNGSignatureHoodieOlive1resize.png?v=1736720677",
+    "product_url": "https://www.reaven.co/products/reaven-olive-signature-hoodie"
+  }
+]

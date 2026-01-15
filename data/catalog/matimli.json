@@ -1,0 +1,102 @@
+[
+  {
+    "id": "51061",
+    "source": "matimli",
+    "name": "ליידי – טופ ניאון מחשוף ת",
+    "price": 299.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/711549922503701-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%9c%d7%99%d7%99%d7%93%d7%99-%d7%98%d7%95%d7%a4-%d7%a0%d7%99%d7%90%d7%95%d7%9f-%d7%9e%d7%97%d7%a9%d7%95%d7%a3-%d7%aa/"
+  },
+  {
+    "id": "51054",
+    "source": "matimli",
+    "name": "מישל – מכופתרת ערב לייקרה",
+    "price": 159.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/711550122503702-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%9e%d7%99%d7%a9%d7%9c-%d7%9e%d7%9b%d7%95%d7%a4%d7%aa%d7%a8%d7%aa-%d7%a2%d7%a8%d7%91-%d7%9c%d7%99%d7%99%d7%a7%d7%a8%d7%94/"
+  },
+  {
+    "id": "51047",
+    "source": "matimli",
+    "name": "אודסה – טוניק שילוב שיפון",
+    "price": 289.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/761550222503701-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%90%d7%95%d7%93%d7%a1%d7%94-%d7%98%d7%95%d7%a0%d7%99%d7%a7-%d7%a9%d7%99%d7%9c%d7%95%d7%91-%d7%a9%d7%99%d7%a4%d7%95%d7%9f/"
+  },
+  {
+    "id": "50865",
+    "source": "matimli",
+    "name": "אנג'ל – טופ פוטר לחליפה",
+    "price": 259.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/711549722506402-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%90%d7%a0%d7%92%d7%9c-%d7%98%d7%95%d7%a4-%d7%a4%d7%95%d7%98%d7%a8-%d7%9c%d7%97%d7%9c%d7%99%d7%a4%d7%94/"
+  },
+  {
+    "id": "50359",
+    "source": "matimli",
+    "name": "פנדי – גופיית סריג לורקס",
+    "price": 219.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/821549222560703-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%a4%d7%a0%d7%93%d7%99-%d7%92%d7%95%d7%a4%d7%99%d7%99%d7%aa-%d7%a1%d7%a8%d7%99%d7%92-%d7%9c%d7%95%d7%a8%d7%a7%d7%a1/"
+  },
+  {
+    "id": "50091",
+    "source": "matimli",
+    "name": "ספיריט – טופ וי ארוך פרינ",
+    "price": 89.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/701547422503702-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%a1%d7%a4%d7%99%d7%a8%d7%99%d7%98-%d7%98%d7%95%d7%a4-%d7%95%d7%99-%d7%90%d7%a8%d7%95%d7%9a-%d7%a4%d7%a8%d7%99%d7%a0/"
+  },
+  {
+    "id": "50078",
+    "source": "matimli",
+    "name": "בלט – טופ וי ארוך פרינט",
+    "price": 89.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/12/701547322503702-1.jpg",
+    "product_url": "https://matimli.co.il/product/%d7%91%d7%9c%d7%98-%d7%98%d7%95%d7%a4-%d7%95%d7%99-%d7%90%d7%a8%d7%95%d7%9a-%d7%a4%d7%a8%d7%99%d7%a0%d7%98/"
+  },
+  {
+    "id": "44352",
+    "source": "matimli",
+    "name": "SIENA – ז'קט סריג ג'קארד",
+    "price": 379.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/06/2I7A6041.jpg",
+    "product_url": "https://matimli.co.il/product/siena-%d7%96%d7%a7%d7%98-%d7%a1%d7%a8%d7%99%d7%92-%d7%92%d7%a7%d7%90%d7%a8%d7%93/"
+  },
+  {
+    "id": "44584",
+    "source": "matimli",
+    "name": "ROSIE – סריג קפוצ' זיפר",
+    "price": 319.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/06/2I7A6205.jpg",
+    "product_url": "https://matimli.co.il/product/rosie-%d7%a1%d7%a8%d7%99%d7%92-%d7%a7%d7%a4%d7%95%d7%a6-%d7%96%d7%99%d7%a4%d7%a8/"
+  },
+  {
+    "id": "44694",
+    "source": "matimli",
+    "name": "ROME – ז'קט סריג זיפר",
+    "price": 339.9,
+    "currency": "ILS",
+    "category": "upper_body",
+    "image_url": "https://matimli.co.il/wp-content/uploads/2025/06/2I7A6368.jpg",
+    "product_url": "https://matimli.co.il/product/rome-%d7%96%d7%a7%d7%98-%d7%a1%d7%a8%d7%99%d7%92-%d7%96%d7%99%d7%a4%d7%a8/"
+  }
+]
