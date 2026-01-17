@@ -1,655 +1,309 @@
-# Stylist AI Agent
+# CLAUDE.md - Styling Agent POC
 
-Virtual try-on + style recommendations powered by FastFit and FashionCLIP.
+## Project Overview
 
-## Quick Start
-
-```bash
-# Setup
-conda create -n stylist python=3.10 && conda activate stylist
-pip install -r requirements.txt
-
-# Run
-python scripts/scrape.py          # Scrape Reaven catalog
-python scripts/embed.py           # Generate embeddings
-uvicorn api.main:app --reload     # Start backend
-cd webapp && npm run dev          # Start frontend
-```
-
----
+A web application POC that demonstrates an AI-powered styling agent for online clothing companies. The agent takes a photo of a user and a clothing item, virtually tries the item on the user, and recommends complementary items to increase revenue through outfit completion.
 
 ## Architecture
 
 ```
-User Photo + Item Selection
-        │
-        ▼
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   FastFit    │     │ FashionCLIP  │     │   Qdrant     │
-│   (Try-On)   │     │ (Embeddings) │     │ (Vector DB)  │
-└──────────────┘     └──────────────┘     └──────────────┘
-        │                   │                    │
-        └───────────────────┴────────────────────┘
-                            │
-                            ▼
-                    Web App (React)
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           STYLING AGENT POC                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────┐    ┌──────────────────┐    ┌─────────────────────┐   │
+│  │   Frontend   │───▶│  Backend API     │───▶│  Model Services     │   │
+│  │   (React)    │◀───│  (FastAPI)       │◀───│                     │   │
+│  └──────────────┘    └──────────────────┘    │  ┌───────────────┐  │   │
+│         │                    │               │  │ Virtual Try-On │  │   │
+│         │                    │               │  │ (IDM-VTON/     │  │   │
+│         ▼                    ▼               │  │  Kolors-VTON)  │  │   │
+│  ┌──────────────┐    ┌──────────────────┐   │  └───────────────┘  │   │
+│  │ User Uploads │    │ Session Manager  │   │                     │   │
+│  │ - Person img │    │ - State tracking │   │  ┌───────────────┐  │   │
+│  │ - Garment img│    │ - Try-on history │   │  │ FashionCLIP   │  │   │
+│  └──────────────┘    └──────────────────┘   │  │ (Embeddings)  │  │   │
+│                                              │  └───────────────┘  │   │
+│                                              │                     │   │
+│                      ┌──────────────────┐   │  ┌───────────────┐  │   │
+│                      │ Product Catalog  │   │  │ Outfit Recomm │  │   │
+│                      │ (Vector DB)      │◀──│──│ Engine        │  │   │
+│                      │ - Embeddings     │   │  └───────────────┘  │   │
+│                      │ - Metadata       │   │                     │   │
+│                      └──────────────────┘   └─────────────────────┘   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+## User Flow
+
+1. **Upload Phase**: User uploads their photo + selects a clothing item
+2. **Try-On Phase**: System generates virtual try-on image showing user wearing the item
+3. **Recommendation Phase**: Below the try-on image, system displays complementary items (pants, shoes, accessories)
+4. **Interactive Loop**: User clicks a recommended item → new try-on generated with both items → new recommendations shown
 
 ---
 
-## Project Structure
+## Key Models & Tools
 
-```
-stylist-ai/
-├── claude.md
-├── requirements.txt
-├── docker-compose.yml
-│
-├── api/
-│   ├── main.py
-│   ├── routes/
-│   │   ├── tryon.py
-│   │   └── recommend.py
-│   └── services/
-│       ├── fastfit.py
-│       ├── embeddings.py
-│       └── vector_store.py
-│
-├── scrapers/
-│   ├── base.py
-│   ├── reaven.py
-│   └── registry.py
-│
-├── webapp/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   └── store.ts
-│   └── package.json
-│
-├── scripts/
-│   ├── scrape.py
-│   └── embed.py
-│
-└── data/
-    ├── catalog/
-    └── models/
-```
+### 1. Virtual Try-On Model
 
----
+**Primary Choice: Nano Banana Pro (Google DeepMind)**
+- Source: [Replicate](https://replicate.com/google/nano-banana-pro)
+- Runs: 9.4M+
+- Pricing: $0.15/image (2K resolution)
+- Why: Production-ready API, commercially viable, high quality output, no licensing restrictions
+- Integration: Simple REST API via Replicate - no GPU infrastructure needed
 
-## Core Services
+**Fallback Options (for reference only):**
+- IDM-VTON: [GitHub](https://github.com/yisol/IDM-VTON) - CC BY-NC-SA 4.0 (non-commercial only)
+- Kolors VTON: [HuggingFace](https://huggingface.co/spaces/Kwai-Kolors/Kolors-Virtual-Try-On) - demo only
 
-### FastFit Service
+### 2. Outfit Recommendation Engine
 
+**Primary: FashionCLIP**
+- Source: [HuggingFace](https://huggingface.co/patrickjohncyh/fashion-clip)
+- Downloads: 2.2M+ monthly
+- What it does: Creates embeddings for fashion items that understand style, category, and visual features
+- Use case: Embed your product catalog, then find complementary items based on style similarity
+
+**How to Use FashionCLIP for Recommendations:**
 ```python
-# api/services/fastfit.py
-import torch
-from diffusers import StableDiffusionInpaintPipeline
+from transformers import CLIPProcessor, CLIPModel
 
-class FastFitService:
-    def __init__(self):
-        self.pipe = None
-    
-    def load(self):
-        self.pipe = StableDiffusionInpaintPipeline.from_pretrained(
-            "zhengchong/FastFit-MR-1024",
-            torch_dtype=torch.float16
-        ).to("cuda")
-    
-    def try_on(self, person_img, garment_img, category):
-        result = self.pipe(
-            image=person_img,
-            garment=garment_img,
-            category=category,
-            num_inference_steps=30,
-            guidance_scale=2.5
-        )
-        return result.images[0]
+model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
+processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
+
+# Embed all catalog items
+# For a given item, find items that:
+# 1. Are in complementary categories (top → bottom, dress → shoes)
+# 2. Have similar style embeddings
+# 3. Match color palettes
 ```
 
-### Embedding Service
+### 3. Replicate Integration
 
+**Using Nano Banana Pro via Replicate API:**
 ```python
-# api/services/embeddings.py
-from fashion_clip.fashion_clip import FashionCLIP
-import numpy as np
-from PIL import Image
+import replicate
 
-class EmbeddingService:
-    def __init__(self, model_name: str = "fashion-clip"):
-        self.fclip = FashionCLIP(model_name)
-
-    def embed_image(self, image: Image.Image) -> np.ndarray:
-        """Generate normalized embedding for a single image."""
-        embedding = self.fclip.encode_images([image], batch_size=1)[0]
-        return embedding / np.linalg.norm(embedding, ord=2)
-
-    def embed_images(self, images: list[Image.Image], batch_size: int = 32) -> np.ndarray:
-        """Generate normalized embeddings for multiple images."""
-        embeddings = self.fclip.encode_images(images, batch_size=batch_size)
-        return embeddings / np.linalg.norm(embeddings, ord=2, axis=-1, keepdims=True)
-
-    def embed_text(self, text: str) -> np.ndarray:
-        """Generate normalized embedding for a single text."""
-        embedding = self.fclip.encode_text([text], batch_size=1)[0]
-        return embedding / np.linalg.norm(embedding, ord=2)
-
-    def embed_texts(self, texts: list[str], batch_size: int = 32) -> np.ndarray:
-        """Generate normalized embeddings for multiple texts."""
-        embeddings = self.fclip.encode_text(texts, batch_size=batch_size)
-        return embeddings / np.linalg.norm(embeddings, ord=2, axis=-1, keepdims=True)
-```
-
-### Vector Store
-
-```python
-# api/services/vector_store.py
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
-
-class VectorStore:
-    def __init__(self, host="localhost", port=6333):
-        self.client = QdrantClient(host=host, port=port)
-        self.collection = "fashion_items"
-    
-    def create_collection(self):
-        self.client.create_collection(
-            self.collection,
-            vectors_config=VectorParams(size=512, distance=Distance.COSINE)
-        )
-    
-    def upsert(self, item_id, vector, payload):
-        self.client.upsert(self.collection, [
-            PointStruct(id=item_id, vector=vector, payload=payload)
-        ])
-    
-    def search(self, vector, categories, exclude_ids, limit=10):
-        return self.client.search(
-            self.collection,
-            query_vector=vector,
-            query_filter={
-                "must": [{"key": "category", "match": {"any": categories}}],
-                "must_not": [{"key": "item_id", "match": {"any": exclude_ids}}]
-            },
-            limit=limit
-        )
-```
-
----
-
-## Scrapers
-
-### Base Scraper
-
-```python
-# scrapers/base.py
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-
-@dataclass
-class Item:
-    id: str
-    source: str
-    name: str
-    price: float
-    currency: str
-    category: str
-    image_url: str
-    product_url: str
-
-class BaseScraper(ABC):
-    SOURCE: str = ""
-    
-    @abstractmethod
-    def scrape_all(self) -> list[Item]:
-        pass
-    
-    @abstractmethod
-    def map_category(self, raw: str) -> str:
-        pass
-```
-
-### Reaven Scraper (Shopify)
-
-Reaven uses Shopify — products available at `/products.json`.
-
-```python
-# scrapers/reaven.py
-import httpx
-from .base import BaseScraper, Item
-
-class ReavenScraper(BaseScraper):
-    SOURCE = "reaven"
-    BASE_URL = "https://www.reaven.co"
-    
-    CATEGORY_MAP = {
-        "hoodie": "upper_body",
-        "crewneck": "upper_body",
-        "t-shirt": "upper_body",
-        "jacket": "upper_body",
-        "bomber": "upper_body",
-        "flannel": "upper_body",
-        "pants": "lower_body",
-        "shorts": "lower_body",
+output = replicate.run(
+    "google/nano-banana-pro",
+    input={
+        "person_image": person_image_url,
+        "garment_image": garment_image_url,
+        # Additional parameters as needed
     }
-    
-    def scrape_all(self) -> list[Item]:
-        items = []
-        page = 1
-        
-        while True:
-            resp = httpx.get(f"{self.BASE_URL}/products.json?limit=250&page={page}")
-            products = resp.json().get("products", [])
-            
-            if not products:
-                break
-            
-            for p in products:
-                items.append(self._parse(p))
-            page += 1
-        
-        return items
-    
-    def _parse(self, p: dict) -> Item:
-        return Item(
-            id=str(p["id"]),
-            source=self.SOURCE,
-            name=p["title"],
-            price=float(p["variants"][0]["price"]),
-            currency="EUR",
-            category=self.map_category(p.get("product_type", "")),
-            image_url=p["images"][0]["src"] if p["images"] else "",
-            product_url=f"{self.BASE_URL}/products/{p['handle']}"
-        )
-    
-    def map_category(self, raw: str) -> str:
-        for key, cat in self.CATEGORY_MAP.items():
-            if key in raw.lower():
-                return cat
-        return "upper_body"
+)
 ```
-
-### Registry
-
-```python
-# scrapers/registry.py
-from .reaven import ReavenScraper
-
-SCRAPERS = {
-    "reaven": ReavenScraper,
-    # "asos": AsosScraper,
-    # "zara": ZaraScraper,
-}
-
-def get_scraper(name: str):
-    return SCRAPERS[name]()
-```
+- Async support for handling 30-60s generation times
+- Webhook callbacks available for job completion
 
 ---
 
-## API
+## Tech Stack Recommendation
 
-### Main App
+### Frontend
+- React with TypeScript
+- TailwindCSS for styling
+- React Query for API state management
+- Image upload with drag-and-drop (react-dropzone)
 
-```python
-# api/main.py
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from api.routes import tryon, recommend
+### Backend
+- FastAPI (Python) - matches ML ecosystem
+- Celery + Redis for async job processing (try-on takes 30-60s)
+- PostgreSQL for user sessions
+- Pinecone/Qdrant for vector similarity search (product embeddings)
 
-app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-app.include_router(tryon.router, prefix="/api/tryon")
-app.include_router(recommend.router, prefix="/api/recommend")
-```
-
-### Try-On Route
-
-```python
-# api/routes/tryon.py
-from fastapi import APIRouter, UploadFile, File
-
-router = APIRouter()
-
-@router.post("/single")
-async def try_on_single(person: UploadFile, garment_url: str, category: str):
-    # Process with FastFit
-    return {"image_url": "result.jpg"}
-
-@router.post("/multi")
-async def try_on_multi(person: UploadFile, garments: list[dict]):
-    # Process multiple items
-    return {"image_url": "result.jpg"}
-```
-
-### Recommend Route
-
-```python
-# api/routes/recommend.py
-from fastapi import APIRouter
-from pydantic import BaseModel
-
-router = APIRouter()
-
-class RecommendRequest(BaseModel):
-    item_id: str
-    categories: list[str]
-    exclude_ids: list[str] = []
-
-@router.post("/complementary")
-async def get_complementary(req: RecommendRequest):
-    # Query vector store
-    return {"items": []}
-```
+### ML Infrastructure
+- Replicate API for Nano Banana Pro (virtual try-on)
+- FashionCLIP can run on CPU for embeddings (or use HuggingFace Inference API)
+- No local GPU required - fully cloud-based inference
 
 ---
 
-## Web App
+## Data Requirements
 
-### Store (Zustand)
+### Product Catalog
 
-```typescript
-// webapp/src/store.ts
-import { create } from 'zustand';
+You'll need for each item:
+- High-quality product image (transparent/white background preferred)
+- Category (top, bottom, dress, shoes, accessory)
+- Subcategory (t-shirt, jeans, sneakers, etc.)
+- Style tags (casual, formal, sporty, etc.)
+- Color information
+- FashionCLIP embedding (pre-computed)
 
-interface Item {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  imageUrl: string;
-}
-
-interface Store {
-  personPhoto: string | null;
-  selectedItems: Item[];
-  shownIds: Set<string>;
-  tryOnResult: string | null;
-  
-  setPhoto: (p: string) => void;
-  addItem: (i: Item) => void;
-  removeItem: (id: string) => void;
-  setTryOnResult: (url: string) => void;
-  markShown: (ids: string[]) => void;
-  reset: () => void;
-  getNextCategories: () => string[];
-}
-
-const FLOW: Record<string, string[]> = {
-  upper_body: ['lower_body', 'shoes', 'bags'],
-  lower_body: ['shoes', 'bags'],
-  dresses: ['shoes', 'bags'],
-  shoes: ['bags'],
-  bags: [],
-};
-
-export const useStore = create<Store>((set, get) => ({
-  personPhoto: null,
-  selectedItems: [],
-  shownIds: new Set(),
-  tryOnResult: null,
-  
-  setPhoto: (p) => set({ personPhoto: p }),
-  addItem: (i) => set((s) => ({
-    selectedItems: [...s.selectedItems, i],
-    shownIds: new Set([...s.shownIds, i.id]),
-  })),
-  removeItem: (id) => set((s) => ({
-    selectedItems: s.selectedItems.filter((i) => i.id !== id),
-  })),
-  setTryOnResult: (url) => set({ tryOnResult: url }),
-  markShown: (ids) => set((s) => ({
-    shownIds: new Set([...s.shownIds, ...ids]),
-  })),
-  reset: () => set({
-    personPhoto: null,
-    selectedItems: [],
-    shownIds: new Set(),
-    tryOnResult: null,
-  }),
-  getNextCategories: () => {
-    const cats = get().selectedItems.map((i) => i.category);
-    if (cats.includes('dresses')) {
-      return ['shoes', 'bags'].filter((c) => !cats.includes(c));
-    }
-    const last = cats[cats.length - 1] || 'upper_body';
-    return (FLOW[last] || []).filter((c) => !cats.includes(c));
-  },
-}));
-```
-
-### App Component
-
-```tsx
-// webapp/src/App.tsx
-import { PhotoUploader } from './components/PhotoUploader';
-import { CatalogGrid } from './components/CatalogGrid';
-import { TryOnResult } from './components/TryOnResult';
-import { Recommendations } from './components/Recommendations';
-import { useStore } from './store';
-
-export default function App() {
-  const { personPhoto, selectedItems } = useStore();
-  
-  return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <h1 className="text-2xl font-bold mb-6">Stylist AI</h1>
-      
-      {!personPhoto ? (
-        <PhotoUploader />
-      ) : selectedItems.length === 0 ? (
-        <CatalogGrid />
-      ) : (
-        <>
-          <TryOnResult />
-          <Recommendations />
-        </>
-      )}
-    </div>
-  );
-}
-```
-
-### Photo Uploader
-
-```tsx
-// webapp/src/components/PhotoUploader.tsx
-import { useDropzone } from 'react-dropzone';
-import { useStore } from '../store';
-
-export function PhotoUploader() {
-  const setPhoto = useStore((s) => s.setPhoto);
-  
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: { 'image/*': [] },
-    onDrop: ([f]) => {
-      const r = new FileReader();
-      r.onload = () => setPhoto(r.result as string);
-      r.readAsDataURL(f);
-    },
-  });
-  
-  return (
-    <div {...getRootProps()} className="border-2 border-dashed p-12 text-center rounded-xl cursor-pointer">
-      <input {...getInputProps()} />
-      <p>📸 Upload your full body photo</p>
-    </div>
-  );
-}
-```
-
-### Try-On Result
-
-```tsx
-// webapp/src/components/TryOnResult.tsx
-import { useStore } from '../store';
-
-export function TryOnResult() {
-  const { personPhoto, tryOnResult, selectedItems, removeItem } = useStore();
-  
-  return (
-    <div className="flex gap-6 mb-6">
-      <img src={tryOnResult || personPhoto!} className="flex-1 rounded-xl max-w-md" />
-      <div className="w-48">
-        <h3 className="font-semibold mb-2">Selected</h3>
-        {selectedItems.map((i) => (
-          <div key={i.id} className="flex items-center gap-2 mb-2">
-            <img src={i.imageUrl} className="w-10 h-10 rounded" />
-            <span className="text-sm flex-1">{i.name}</span>
-            <button onClick={() => removeItem(i.id)} className="text-red-500">×</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-### Recommendations
-
-```tsx
-// webapp/src/components/Recommendations.tsx
-import { useEffect, useState } from 'react';
-import { useStore } from '../store';
-
-export function Recommendations() {
-  const { selectedItems, shownIds, getNextCategories, addItem, markShown } = useStore();
-  const [items, setItems] = useState<any[]>([]);
-  
-  const categories = getNextCategories();
-  const lastItem = selectedItems.at(-1);
-  
-  useEffect(() => {
-    if (!lastItem || !categories.length) return;
-    
-    fetch('http://localhost:8000/api/recommend/complementary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        item_id: lastItem.id,
-        categories,
-        exclude_ids: [...shownIds],
-      }),
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        setItems(d.items);
-        markShown(d.items.map((i: any) => i.id));
-      });
-  }, [lastItem?.id, categories.join()]);
-  
-  if (!categories.length) {
-    return <p className="text-center py-4">✨ Look complete!</p>;
-  }
-  
-  return (
-    <div>
-      <h3 className="font-semibold mb-3">Complete the look</h3>
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {items.map((i) => (
-          <button key={i.id} onClick={() => addItem(i)} className="w-24 flex-shrink-0">
-            <img src={i.imageUrl} className="rounded-lg" />
-            <p className="text-xs truncate">{i.name}</p>
-            <p className="text-xs text-gray-500">€{i.price}</p>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
+### Sample Datasets for POC
+- **DressCode**: [GitHub](https://github.com/aimagelab/dress-code) - Multi-category try-on dataset
+- **VITON-HD**: High-resolution try-on pairs
+- **DeepFashion**: General fashion dataset
 
 ---
 
-## Scripts
-
-### Scrape
-
-```python
-# scripts/scrape.py
-from scrapers.registry import get_scraper
-import json
-
-scraper = get_scraper("reaven")
-items = scraper.scrape_all()
-
-with open("data/catalog/reaven.json", "w") as f:
-    json.dump([i.__dict__ for i in items], f, indent=2)
-
-print(f"Scraped {len(items)} items")
-```
-
-### Embed
-
-```python
-# scripts/embed.py
-from api.services.embeddings import EmbeddingService
-from api.services.vector_store import VectorStore
-from PIL import Image
-import httpx, json
-from io import BytesIO
-
-emb = EmbeddingService()
-store = VectorStore()
-store.create_collection()
-
-with open("data/catalog/reaven.json") as f:
-    items = json.load(f)
-
-for item in items:
-    img = Image.open(BytesIO(httpx.get(item["image_url"]).content))
-    vec = emb.embed_image(img)
-    store.upsert(item["id"], vec.tolist(), item)
-    print(f"✓ {item['name']}")
-```
-
----
-
-## Dependencies
-
-```txt
-# requirements.txt
-fastapi>=0.104.0
-uvicorn>=0.24.0
-torch>=2.0.0
-transformers>=4.35.0
-diffusers>=0.21.0
-qdrant-client>=1.6.0
-httpx>=0.25.0
-pillow>=10.0.0
-python-multipart>=0.0.6
-fashion-clip>=0.3.0
-```
-
----
-
-## Docker
+## API Design
 
 ```yaml
-# docker-compose.yml
-services:
-  api:
-    build: .
-    ports: ["8000:8000"]
-    depends_on: [qdrant]
-    
-  webapp:
-    build: ./webapp
-    ports: ["3000:3000"]
-    
-  qdrant:
-    image: qdrant/qdrant
-    ports: ["6333:6333"]
+POST /api/v1/try-on
+  Input:
+    - person_image: file
+    - garment_image: file
+    - garment_category: string (upper_body, lower_body, full_body)
+  Output:
+    - job_id: string
+
+GET /api/v1/try-on/{job_id}
+  Output:
+    - status: pending | processing | completed | failed
+    - result_image_url: string (when completed)
+
+POST /api/v1/recommendations
+  Input:
+    - current_garments: list[garment_id]
+    - person_style_embedding: optional
+    - num_recommendations: int
+  Output:
+    - recommendations: list[{garment_id, category, image_url, match_score}]
+
+POST /api/v1/composite-try-on
+  Input:
+    - person_image: file
+    - garment_ids: list[garment_id]  # Multiple items to try on
+  Output:
+    - job_id: string
 ```
 
 ---
 
-## Adding New Sites
+## Recommendation Logic
 
-1. Create `scrapers/{site}.py` with `BaseScraper`
-2. Add to `scrapers/registry.py`
-3. Run `scrape.py` and `embed.py`
+```python
+def get_outfit_recommendations(current_item, catalog_embeddings, k=6):
+    """
+    Given a selected item, recommend complementary pieces.
+    """
+    # 1. Determine complementary categories
+    category_map = {
+        'top': ['bottom', 'shoes', 'accessory'],
+        'bottom': ['top', 'shoes', 'accessory'],
+        'dress': ['shoes', 'accessory', 'outerwear'],
+        'shoes': ['top', 'bottom', 'accessory'],
+    }
+    target_categories = category_map[current_item.category]
 
-**Planned**: Reaven ✓, ASOS, Zara, H&M
+    # 2. Filter catalog to complementary categories
+    candidates = catalog.filter(category__in=target_categories)
+
+    # 3. Use FashionCLIP to find style-compatible items
+    current_embedding = get_embedding(current_item.image)
+
+    # 4. Score by style similarity + category diversity
+    scored = []
+    for item in candidates:
+        style_score = cosine_similarity(current_embedding, item.embedding)
+        # Boost items from underrepresented categories
+        scored.append((item, style_score))
+
+    # 5. Return top-k, ensuring category diversity
+    return select_diverse_top_k(scored, k)
+```
+
+---
+
+## Directory Structure
+
+```
+styling-agent-poc/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ImageUploader.tsx
+│   │   │   ├── TryOnViewer.tsx
+│   │   │   ├── RecommendationGrid.tsx
+│   │   │   └── OutfitBuilder.tsx
+│   │   ├── hooks/
+│   │   │   └── useTryOn.ts
+│   │   └── App.tsx
+│   └── package.json
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── routers/
+│   │   │   ├── tryon.py
+│   │   │   └── recommendations.py
+│   │   ├── services/
+│   │   │   ├── tryon_service.py
+│   │   │   ├── embedding_service.py
+│   │   │   └── recommendation_engine.py
+│   │   └── models/
+│   │       └── schemas.py
+│   ├── workers/
+│   │   └── tryon_worker.py
+│   └── requirements.txt
+├── ml/
+│   ├── idm_vton/           # IDM-VTON model code
+│   ├── fashion_clip/       # FashionCLIP embeddings
+│   └── scripts/
+│       └── embed_catalog.py
+├── data/
+│   ├── catalog/            # Product images
+│   └── embeddings/         # Pre-computed embeddings
+├── docker-compose.yml
+└── CLAUDE.md
+```
+
+---
+
+## Quick Start Commands
+
+```bash
+# 1. Install Python dependencies
+pip install replicate transformers torch fastapi uvicorn
+
+# 2. Set up Replicate API key
+export REPLICATE_API_TOKEN=your_token_here
+
+# 3. Start backend
+cd backend
+uvicorn app.main:app --reload
+
+# 4. Start frontend
+cd frontend
+npm install && npm run dev
+```
+
+---
+
+## POC Demo Script
+
+1. **Demo Opening**: "Here's how AI can increase average order value for your clothing store"
+2. **Upload**: Show user uploading their photo
+3. **Select Item**: User picks a shirt from catalog
+4. **Try-On**: Watch the AI generate the try-on image (30-60s)
+5. **Recommendations**: "Based on this shirt, here are matching items..."
+6. **Add to Cart**: User clicks jeans → see try-on with both items
+7. **Revenue Impact**: "Users who use virtual try-on add 2.3 more items on average"
+
+---
+
+## Key Resources
+
+| Resource | URL |
+|----------|-----|
+| Nano Banana Pro | https://replicate.com/google/nano-banana-pro |
+| Replicate Docs | https://replicate.com/docs |
+| FashionCLIP | https://huggingface.co/patrickjohncyh/fashion-clip |
+| DressCode Dataset | https://github.com/aimagelab/dress-code |
+| Awesome VTON List | https://github.com/minar09/awesome-virtual-try-on |
+
+---
+
+## Next Steps
+
+- [ ] Set up Replicate API key and test Nano Banana Pro
+- [ ] Embed sample catalog with FashionCLIP
+- [ ] Build FastAPI backend with try-on endpoint (Replicate integration)
+- [ ] Create React frontend with upload flow
+- [ ] Implement recommendation engine
+- [ ] Add multi-item try-on support
+- [ ] Polish UI for demo presentation
