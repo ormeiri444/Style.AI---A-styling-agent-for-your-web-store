@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.routers import tryon, recommend
 
@@ -12,6 +15,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files (catalog images)
+static_path = Path(__file__).parent / "data"
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 app.include_router(tryon.router, prefix="/api", tags=["try-on"])
 app.include_router(recommend.router, prefix="/api", tags=["recommendations"])

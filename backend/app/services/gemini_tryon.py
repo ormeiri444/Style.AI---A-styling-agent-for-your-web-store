@@ -4,6 +4,10 @@ import io
 from google import genai
 from google.genai import types
 from PIL import Image
+import pillow_heif
+
+# Register HEIF/HEIC support with Pillow
+pillow_heif.register_heif_opener()
 
 from app.config import GOOGLE_API_KEY, IMAGE_OUTPUT_SIZE
 
@@ -13,8 +17,28 @@ def _get_client():
 
 
 def _b64_to_image(b64_string: str) -> Image.Image:
-    image_data = base64.b64decode(b64_string)
-    return Image.open(io.BytesIO(image_data))
+    # Handle potential data URL prefix
+    if ',' in b64_string:
+        b64_string = b64_string.split(',')[1]
+
+    # Clean up the base64 string (remove whitespace, handle URL-safe encoding)
+    b64_string = b64_string.strip()
+    b64_string = b64_string.replace('-', '+').replace('_', '/')
+
+    # Add padding if needed
+    padding = 4 - len(b64_string) % 4
+    if padding != 4:
+        b64_string += '=' * padding
+
+    print(f"[_b64_to_image] Base64 string first 100 chars: {b64_string[:100]}")
+
+    try:
+        image_data = base64.b64decode(b64_string)
+        print(f"[_b64_to_image] Decoded {len(image_data)} bytes")
+        return Image.open(io.BytesIO(image_data))
+    except Exception as e:
+        print(f"[_b64_to_image] Decode error: {e}")
+        raise
 
 
 def _image_to_b64(image: Image.Image) -> str:
@@ -29,10 +53,14 @@ async def perform_tryon(
     garment_description: str,
     category: str = "upper_body",
 ) -> str:
+    print(f"[gemini_tryon] Starting perform_tryon...")
     client = _get_client()
+    print(f"[gemini_tryon] Client created")
 
     human_img = _b64_to_image(human_image_b64)
+    print(f"[gemini_tryon] Human image decoded: {human_img.size}")
     garment_img = _b64_to_image(garment_image_b64)
+    print(f"[gemini_tryon] Garment image decoded: {garment_img.size}")
 
     prompt = f"""
     You are a professional fashion virtual try-on system.
@@ -51,6 +79,7 @@ async def perform_tryon(
     - Maintain high image quality and realism
     """
 
+    print(f"[gemini_tryon] Calling Gemini API...")
     response = client.models.generate_content(
         model="gemini-2.0-flash-exp-image-generation",
         contents=[prompt, human_img, garment_img],
@@ -58,13 +87,16 @@ async def perform_tryon(
             response_modalities=["IMAGE", "TEXT"],
         ),
     )
+    print(f"[gemini_tryon] Response received, candidates: {len(response.candidates) if response.candidates else 0}")
 
     for part in response.candidates[0].content.parts:
         if part.inline_data is not None:
+            print(f"[gemini_tryon] Found inline_data in response")
             image_data = part.inline_data.data
             result_image = Image.open(io.BytesIO(image_data))
             return _image_to_b64(result_image)
 
+    print(f"[gemini_tryon] No image found in response parts")
     raise Exception("No image generated")
 
 
