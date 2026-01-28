@@ -11,7 +11,7 @@ pillow_heif.register_heif_opener()
 
 from pathlib import Path
 
-from app.config import GOOGLE_API_KEY, IMAGE_OUTPUT_SIZE
+from app.config import GOOGLE_API_KEY, IMAGE_OUTPUT_SIZE, GEMINI_TRYON_MODEL
 
 # Load prompt templates
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -82,7 +82,7 @@ async def perform_tryon(
 
     print(f"[gemini_tryon] Calling Gemini API...")
     response = client.models.generate_content(
-        model="gemini-2.0-flash-exp-image-generation",
+        model=GEMINI_TRYON_MODEL,
         contents=[prompt, human_img, garment_img],
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE", "TEXT"],
@@ -123,7 +123,7 @@ async def add_item_to_outfit(
     )
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash-exp-image-generation",
+        model=GEMINI_TRYON_MODEL,
         contents=[prompt, current_img, new_item_img],
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE", "TEXT"],
