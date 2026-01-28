@@ -148,3 +148,4 @@ cython_debug/
 # Virtual Try-On specific (if needed)
 # Add any project-specific files/folders here
 backend/tests/
+backend/data/catalog_images/*
