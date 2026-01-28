@@ -9,7 +9,18 @@ import pillow_heif
 # Register HEIF/HEIC support with Pillow
 pillow_heif.register_heif_opener()
 
+from pathlib import Path
+
 from app.config import GOOGLE_API_KEY, IMAGE_OUTPUT_SIZE
+
+# Load prompt templates
+PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+
+
+def _load_prompt(filename: str) -> str:
+    """Load a prompt template from the prompts directory."""
+    prompt_path = PROMPTS_DIR / filename
+    return prompt_path.read_text()
 
 
 def _get_client():
@@ -62,22 +73,12 @@ async def perform_tryon(
     garment_img = _b64_to_image(garment_image_b64)
     print(f"[gemini_tryon] Garment image decoded: {garment_img.size}")
 
-    prompt = f"""
-    You are a professional fashion virtual try-on system.
-
-    Task: Generate a realistic image of the person in the first image
-    wearing the {category} clothing item shown in the second image.
-
-    Clothing description: {garment_description}
-
-    Requirements:
-    - Maintain the person's exact face, body shape, pose, and proportions
-    - Apply the clothing item naturally, accounting for body position
-    - Preserve realistic lighting and shadows
-    - Keep the original background
-    - The clothing should fit naturally on the person's body
-    - Maintain high image quality and realism
-    """
+    # Load and format the prompt template
+    prompt_template = _load_prompt("tryon_prompt.md")
+    prompt = prompt_template.format(
+        category=category,
+        garment_description=garment_description
+    )
 
     print(f"[gemini_tryon] Calling Gemini API...")
     response = client.models.generate_content(
@@ -114,20 +115,12 @@ async def add_item_to_outfit(
     worn_items = worn_items or []
     worn_items_str = ", ".join(worn_items) if worn_items else "the current outfit"
 
-    prompt = f"""
-    The person in the first image is currently wearing: {worn_items_str}.
-
-    Task: Add the clothing item from the second image to complete their outfit.
-
-    New item description: {item_description}
-
-    Requirements:
-    - Keep everything about the current outfit exactly the same
-    - Add ONLY the new item to the appropriate body part
-    - Maintain realistic proportions and fit
-    - Preserve the person's identity and pose
-    - Ensure the new item coordinates well with existing clothing
-    """
+    # Load and format the prompt template
+    prompt_template = _load_prompt("add_item_prompt.md")
+    prompt = prompt_template.format(
+        worn_items_str=worn_items_str,
+        item_description=item_description
+    )
 
     response = client.models.generate_content(
         model="gemini-2.0-flash-exp-image-generation",
