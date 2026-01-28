@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "id": "top_001",
+      "name": "White Cotton T-Shirt",
+      "category": "upper_body",
+      "subcategory": "t-shirt",
+      "color": "white",
+      "style": ["casual", "minimalist", "streetwear"],
+      "image_path": "catalog_images/top_001.jpg",
+      "description": "Classic white cotton crew neck t-shirt"
+    },
+    {
+      "id": "top_002",
+      "name": "Navy Blue Oxford Shirt",
+      "category": "upper_body",
+      "subcategory": "button-up",
+      "color": "navy",
+      "style": ["smart-casual", "preppy", "business-casual"],
+      "image_path": "catalog_images/top_002.jpg",
+      "description": "Navy blue oxford button-up shirt"
+    },
+    {
+      "id": "bottom_001",
+      "name": "Blue Denim Jeans",
+      "category": "lower_body",
+      "subcategory": "jeans",
+      "color": "blue",
+      "style": ["casual", "streetwear"],
+      "image_path": "catalog_images/bottom_001.jpg",
+      "description": "Classic slim fit blue denim jeans"
+    },
+    {
+      "id": "bottom_002",
+      "name": "Khaki Chinos",
+      "category": "lower_body",
+      "subcategory": "chinos",
+      "color": "khaki",
+      "style": ["smart-casual", "preppy", "business-casual"],
+      "image_path": "catalog_images/bottom_002.jpg",
+      "description": "Tailored khaki chino pants"
+    },
+    {
+      "id": "shoes_001",
+      "name": "White Sneakers",
+      "category": "shoes",
+      "subcategory": "sneakers",
+      "color": "white",
+      "style": ["casual", "streetwear", "minimalist"],
+      "image_path": "catalog_images/shoes_001.jpg",
+      "description": "Clean white leather sneakers"
+    },
+    {
+      "id": "shoes_002",
+      "name": "Brown Leather Loafers",
+      "category": "shoes",
+      "subcategory": "loafers",
+      "color": "brown",
+      "style": ["smart-casual", "preppy", "business-casual"],
+      "image_path": "catalog_images/shoes_002.jpg",
+      "description": "Classic brown leather penny loafers"
+    }
+  ]
+}
